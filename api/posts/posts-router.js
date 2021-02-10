@@ -10,17 +10,19 @@ const router = express.Router();
 
 //endpoints here
 //get requests (three)
-router.get("/api/posts", (req, res) => {
+router.get("/", (req, res) => {
   PostModels.find(req.query)
     .then((posts) => {
       res.status(200).json(posts);
     })
     .catch((err) => {
-      res.status(500).json({ message: "" });
+      res
+        .status(500)
+        .json({ message: "The posts information could not be retrieved" });
     });
 });
 
-router.get("/api/posts/:id", (req, res) => {
+router.get("/:id", (req, res) => {
   PostModels.findById(req.params.id).then((posts) => {
     if (posts) {
       res.status(200).json(posts);
@@ -30,8 +32,8 @@ router.get("/api/posts/:id", (req, res) => {
   });
 });
 
-router.get("/api/posts/:id/comments", (req, res) => {
-  PostModels.findCommentById(req.params.id)
+router.get("/:id/comments", (req, res) => {
+  PostModels.findPostComments(req.params.id)
     .then((comments) => {
       if (comments) {
         res.status(200).json(comments);
@@ -48,17 +50,19 @@ router.get("/api/posts/:id/comments", (req, res) => {
     });
 });
 
-//post requests (one)
-router.post("/api/posts", (req, res) => {
+// post requests (one)
+router.post("/", (req, res) => {
   const { title, contents } = req.body;
   if (!title || !contents) {
     res
       .status(400)
       .json({ message: "Please Provide title and contents for the post" });
   } else {
-    PostModels.insert(title, contents)
-      .then((posts) => {
-        res.status(201).json(posts);
+    PostModels.insert(req.body)
+      .then(({ id }) => {
+        PostModels.findById(id).then((post) => {
+          res.status(201).json(post);
+        });
       })
       .catch((err) => {
         res.status(500).json({
@@ -69,18 +73,20 @@ router.post("/api/posts", (req, res) => {
 });
 
 //put requests (one)
-router.put("/api/posts/:id", (req, res) => {
-  const post = req.body;
+router.put("/:id", (req, res) => {
+  const changes = req.body;
   const idVar = req.params.id;
-  if (!post.title || !post.contents) {
+  if (!changes.title || !changes.contents) {
     res
       .status(400)
       .json({ message: "Please provide title and contents for the post." });
   } else {
-    PostModels.update(id, post)
+    PostModels.update(idVar, changes)
       .then((post) => {
         if (post) {
-          res.status(200).json(post);
+          PostModels.findById(idVar).then((post) => {
+            res.status(200).json(post);
+          });
         } else {
           res
             .status(404)
@@ -96,8 +102,21 @@ router.put("/api/posts/:id", (req, res) => {
 });
 
 //delete requests (one)
-router.delete("/api/posts/:id",(req,res)=>{
-    
-})
+router.delete("/:id", (req, res) => {
+  const id = req.params.id;
+  PostModels.remove(id)
+    .then((postId) => {
+      if (!postId) {
+        res
+          .status(404)
+          .json({ message: "The post with the specified ID does not exist" });
+      } else {
+        res.status(201).json({ message: "The posts was deleted" });
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({ message: "The psot could not be removed" });
+    });
+});
 
 module.exports = router;
