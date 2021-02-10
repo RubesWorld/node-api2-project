@@ -47,6 +47,7 @@ router.get("/api/posts/:id/comments", (req, res) => {
       });
     });
 });
+
 //post requests (one)
 router.post("/api/posts", (req, res) => {
   const { title, contents } = req.body;
@@ -68,11 +69,35 @@ router.post("/api/posts", (req, res) => {
 });
 
 //put requests (one)
-router.put("/api/posts/:id", (req, res) => {});
+router.put("/api/posts/:id", (req, res) => {
+  const post = req.body;
+  const idVar = req.params.id;
+  if (!post.title || !post.contents) {
+    res
+      .status(400)
+      .json({ message: "Please provide title and contents for the post." });
+  } else {
+    PostModels.update(id, post)
+      .then((post) => {
+        if (post) {
+          res.status(200).json(post);
+        } else {
+          res
+            .status(404)
+            .json({ message: "The post with the specified ID does not exist" });
+        }
+      })
+      .catch((err) => {
+        res
+          .status(500)
+          .json({ message: "The post information could not be modified" });
+      });
+  }
+});
 
 //delete requests (one)
-// router.delete("/api/posts/:id",(req,res)=>{
-
-// })
+router.delete("/api/posts/:id",(req,res)=>{
+    
+})
 
 module.exports = router;
